@@ -425,8 +425,11 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg-2);padding:52px
 /* ============================================================
    13. ANIMACIÓN DE ENTRADA AL HACER SCROLL
    ============================================================ */
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease),transform .65s var(--ease)}
-.reveal.in{opacity:1;transform:none}
+/* El contenido es visible por defecto: si el JavaScript falla o no se ejecuta,
+   nada queda oculto. La clase .js-anim solo la añade el script cuando puede
+   gestionar la animación de verdad. */
+.js-anim .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease),transform .65s var(--ease)}
+.js-anim .reveal.in{opacity:1;transform:none}
 </style>
 </head>
 
@@ -1244,7 +1247,15 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg-2);padding:52px
   /* ---------- 4. ANIMACIÓN DE ENTRADA ---------- */
   var reveals = document.querySelectorAll('.reveal');
 
+  function revealAll() {
+    document.documentElement.classList.remove('js-anim');
+    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+  }
+
   if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // Solo ahora ocultamos los elementos: a partir de aquí el script se encarga de mostrarlos.
+    document.documentElement.classList.add('js-anim');
+
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en, i) {
         if (en.isIntersecting) {
@@ -1256,9 +1267,13 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg-2);padding:52px
     }, { rootMargin: '0px 0px -60px 0px', threshold: 0.1 });
 
     reveals.forEach(function (el) { io.observe(el); });
+
+    // Red de seguridad: pase lo que pase, a los 3 segundos todo es visible.
+    // Nunca debe quedar contenido oculto por un fallo de animación.
+    setTimeout(revealAll, 3000);
   } else {
-    // Sin soporte, o si se prefiere menos movimiento: todo visible
-    reveals.forEach(function (el) { el.classList.add('in'); });
+    // Sin soporte, o si se prefiere menos movimiento: todo visible desde el principio
+    revealAll();
   }
 
   /* ---------- 5. DESCARGAS ---------- */
